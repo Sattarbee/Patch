@@ -3,7 +3,6 @@
   ansible.builtin.yum:
     name: '*'
     state: latest
-    exclude: "{{ exclude_packages }}"
     update_only: true
   when: ansible_pkg_mgr == "yum"
   register: patchingresult
