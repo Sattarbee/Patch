@@ -28,7 +28,6 @@
   ansible.builtin.dnf:
     name: '*'
     state: latest
-    exclude: "{{ exclude_packages }}"
     update_only: true
   when: ansible_pkg_mgr == "dnf"
   register: patchingresultdnf
