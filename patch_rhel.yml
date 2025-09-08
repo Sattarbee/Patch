@@ -1,30 +1,50 @@
 ---
-- name: Patch RHEL servers
-  hosts: Linux
-  become: true
-  vars:
-    exclude_packages: []   # default empty, can be overridden from inventory or extra vars
+- name: Upgrade all packages (yum)
+  ansible.builtin.yum:
+    name: '*'
+    state: latest
+    exclude: "{{ exclude_packages }}"
+    update_only: true
+  when: ansible_pkg_mgr == "yum"
+  register: patchingresult
 
-  tasks:
-    - name: Upgrade all packages (yum or dnf)
-      package:
-        name: "*"
-        state: latest
-        exclude: "{{ exclude_packages }}"
-      register: patching_result
+- name: Combine results into single line
+  ansible.builtin.set_fact:
+    myresults: "{{ myresults | default([]) + [item[0] + ': ' + item[1]] }}"
+  loop: "{{ patchingresult.changes.updated }}"
+  loop_control:
+    label: "{{ item[0] }}"
+  when:
+    - ansible_pkg_mgr == "yum"
+    - patchingresult.changes.updated is defined
 
-    - name: Display patching results
-      ansible.builtin.debug:
-        msg: "{{ patching_result.results | default('System is up to date') }}"
+- name: Display Yum Patching Results
+  ansible.builtin.debug:
+    msg: "{{ myresults | default('System is up to date') }}"
+  when:
+    - ansible_pkg_mgr == "yum"
 
-    - name: Check if reboot is needed
-      ansible.builtin.command: needs-restarting -r
-      register: reboot_check
-      changed_when: reboot_check.rc == 1
-      failed_when: false
-      check_mode: false
+- name: Upgrade all packages (dnf)
+  ansible.builtin.dnf:
+    name: '*'
+    state: latest
+    exclude: "{{ exclude_packages }}"
+    update_only: true
+  when: ansible_pkg_mgr == "dnf"
+  register: patchingresultdnf
 
-    - name: Reboot server if necessary
-      ansible.builtin.reboot:
-        reboot_timeout: 600
-      when: reboot_check.rc == 1
+- name: Display DNF Patching Results
+  ansible.builtin.debug:
+    msg: "{{ patchingresultdnf.results }}"
+  when: ansible_pkg_mgr == "dnf"
+
+- name: Check to see if we need a reboot
+  ansible.builtin.command: needs-restarting -r
+  register: result
+  changed_when: result.rc == 1
+  failed_when: result.rc > 1
+  check_mode: false
+
+- name: Reboot Server if Necessary
+  ansible.builtin.reboot:
+  when: result.rc == 1
