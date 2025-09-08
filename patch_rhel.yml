@@ -1,5 +1,6 @@
 ---
 - name: Upgrade all packages (yum)
+  become: true
   ansible.builtin.yum:
     name: '*'
     state: latest
@@ -24,6 +25,7 @@
     - ansible_pkg_mgr == "yum"
 
 - name: Upgrade all packages (dnf)
+  become:true
   ansible.builtin.dnf:
     name: '*'
     state: latest
