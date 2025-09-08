@@ -5,7 +5,7 @@
   tasks:
     - name: Patch RHEL
       ansible.builtin.include_tasks: patch_rhel.yml
-      when: os is match("rhel.*") or os == "Red Hat"
+      when: ansible_distribution is search('RedHat|rhel')
 
 # - name: Patch Windows servers
 #   hosts: all
