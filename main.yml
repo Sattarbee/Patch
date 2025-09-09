@@ -5,4 +5,4 @@
   become: true
 
   tasks:
-    - import_tasks: patch.yml
+    - import_tasks: patch_rhel.yml
