@@ -1,7 +1,9 @@
+# Debug which package manager is being used
 - name: Debug package manager
   debug:
     msg: "ansible_pkg_mgr is {{ ansible_pkg_mgr }}"
 
+# YUM block (if system uses yum)
 - name: Upgrade all packages (yum)
   become: true
   ansible.builtin.yum:
@@ -26,7 +28,8 @@
     msg: "{{ myresults | default('System is up to date') }}"
   when: ansible_pkg_mgr == "yum"
 
-# ✅ THIS IS THE DNF TASK YOU NEED
+
+# DNF block (if system uses dnf)
 - name: Upgrade all packages (dnf)
   become: true
   ansible.builtin.dnf:
@@ -38,9 +41,11 @@
 
 - name: Display DNF Patching Results
   debug:
-    msg: "{{ patchingresultdnf.results | default('No packages were updated') }}"
+    msg: "{{ patchingresultdnf.results | default('System is up to date') }}"
   when: ansible_pkg_mgr == "dnf"
 
+
+# Check for reboot and reboot if needed
 - name: Check to see if we need a reboot
   become: true
   ansible.builtin.command:
