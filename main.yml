@@ -1,8 +1,6 @@
 ---
 - name: Main play to run patching
   hosts: Linux
-  gather_facts: true
-  become: true
 
   tasks:
     - import_tasks: patch_rhel.yml
