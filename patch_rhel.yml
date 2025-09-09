@@ -34,3 +34,7 @@
 - name: Reboot Server if Necessary
   ansible.builtin.reboot:
   when: result.rc == 1
+
+- name: Debug package manager
+  debug:
+    msg: "ansible_pkg_mgr is {{ ansible_pkg_mgr }}"
