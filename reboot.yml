@@ -1,0 +1,12 @@
+---
+- name: Reboot Linux server
+  hosts: Linux
+  become: yes
+
+  tasks:
+    - name: Run needs-restarting command (no conditional logic)
+      ansible.builtin.command: needs-restarting -r
+      ignore_errors: yes
+
+    - name: Reboot Server
+      ansible.builtin.reboot:
