@@ -1,12 +1,9 @@
 ---
 - name: Reboot Linux server
-  hosts: Linux
+  hosts: all
   become: yes
+  gather_facts: yes
 
   tasks:
-    - name: Run needs-restarting command (no conditional logic)
-      ansible.builtin.command: needs-restarting -r
-      ignore_errors: yes
-
     - name: Reboot Server
       ansible.builtin.reboot:
