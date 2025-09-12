@@ -44,8 +44,3 @@
     msg: "{{ patchingresultdnf.results | default('System is up to date') }}"
   when: ansible_pkg_mgr == "dnf"
 
-
-# Check for reboot and reboot if needed
-- name: Reboot Server 
-  become: true
-  ansible.builtin.reboot:
