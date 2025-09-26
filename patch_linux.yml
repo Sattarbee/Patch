@@ -1,36 +1,24 @@
 ---
-- name: Gather yum security updates from Linux servers
+- name: Run `yum updateinfo list security` and capture output
   hosts: Linux
   become: yes
-  gather_facts: true
 
   tasks:
-    - name: Run yum updateinfo list security
+    - name: Get yum security update info
       shell: yum updateinfo list security
-      register: yum_security
+      register: security_output
 
-    - name: Save output in JSON format for later processing
-      copy:
-        content: |
-          {
-            "host": "{{ inventory_hostname }}",
-            "fqdn": "{{ ansible_fqdn }}",
-            "date": "{{ ansible_date_time.date }}",
-            "output": "{{ yum_security.stdout_lines }}"
-          }
-        dest: "/tmp/yum_output_{{ inventory_hostname }}.json"
+    - name: Set fact for output
+      set_fact:
+        security_report: "{{ security_output.stdout }}"
 
-- name: Generate Excel report from collected JSON files
-  hosts: localhost
-  tasks:
-    - name: Merge all JSON into a single Excel report
-      script: generate_excel.py
-
-- name: Copy Excel report to Windows workstation
+- name: Copy report to Windows workstation
   hosts: my_windows_pc
   gather_facts: false
+
   tasks:
-    - name: Copy the Excel report to Windows Downloads
+    - name: Save Linux patch report to file on Windows
       ansible.windows.win_copy:
-        src: /tmp/yum_security_report.xlsx
-        dest: C:\Users\P-SVE7FZ\Downloads\yum_security_report.xlsx
+        content: "{{ hostvars[item].security_report }}"
+        dest: "C:\\Users\\P-SVE7FZ\\Downloads\\{{ item }}_yum_security_report.csv"
+      loop: "{{ groups['all'] }}"
