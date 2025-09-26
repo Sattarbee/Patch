@@ -1,3 +1,4 @@
+---
 - name: Step 1 - Generate security patch report from Linux servers
   hosts: Linux
   gather_facts: no
@@ -14,8 +15,9 @@
   hosts: localhost
   gather_facts: no
   vars:
-    patch_report_txt: "/tmp/security_patch_report.txt"
-    patch_report_xlsx: "/tmp/security_patch_report.xlsx"
+    patch_report_txt: "/home/aap-tower/security_patch_report.txt"
+    patch_report_xlsx: "/home/aap-tower/security_patch_report.xlsx"
+    convert_script_path: "/home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py"
   tasks:
     - name: Save patch report as TXT
       copy:
@@ -30,19 +32,31 @@
           {% endfor %}
           {% endfor %}
 
+    - name: Check if TXT file exists
+      stat:
+        path: "{{ patch_report_txt }}"
+      register: txt_file_status
+
+    - name: Fail if TXT file not found
+      fail:
+        msg: "TXT file not found at {{ patch_report_txt }}"
+      when: not txt_file_status.stat.exists
+
     - name: Convert TXT report to Excel
       command:
         argv:
           - /usr/bin/python3
-          - /home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py
+          - "{{ convert_script_path }}"
           - "{{ patch_report_txt }}"
           - "{{ patch_report_xlsx }}"
 
 - name: Step 3 - Copy Excel report to Windows workstation
   hosts: my_windows_pc
   gather_facts: no
+  vars:
+    patch_report_xlsx: "/home/aap-tower/security_patch_report.xlsx"
   tasks:
     - name: Copy Excel report to Windows machine
       ansible.windows.win_copy:
-        src: "/tmp/security_patch_report.xlsx"
+        src: "{{ patch_report_xlsx }}"
         dest: "C:\\Users\\P-SVE7FZ\\Downloads\\security_patch_report.xlsx"
