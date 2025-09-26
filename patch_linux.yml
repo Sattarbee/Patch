@@ -20,7 +20,7 @@
         content: |
           Security Patch List
           -------------------
-          {% for host in groups['linux_servers'] %}
+          {% for host in groups['Linux'] %}
           Host: {{ host }}
           {% for line in hostvars[host].patch_list %}
           {{ line }}
