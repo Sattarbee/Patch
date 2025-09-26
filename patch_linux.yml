@@ -10,13 +10,12 @@
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
-- name: Step 2 - Save patch report and convert to Excel on control node
+- name: Step 2 - Save patch report on Ansible control node
   hosts: localhost
   gather_facts: no
   vars:
-    patch_report_txt: "/home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/security_patch_report.txt"
-    patch_report_xlsx: "/home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/security_patch_report.xlsx"
-    converter_script: "/home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py"
+    patch_report_txt: "/tmp/security_patch_report.txt"
+    patch_report_xlsx: "/tmp/security_patch_report.xlsx"
   tasks:
     - name: Save patch report as TXT
       copy:
@@ -35,17 +34,15 @@
       command:
         argv:
           - /usr/bin/python3
-          - "{{ converter_script }}"
+          - /home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py
           - "{{ patch_report_txt }}"
           - "{{ patch_report_xlsx }}"
 
 - name: Step 3 - Copy Excel report to Windows workstation
   hosts: my_windows_pc
   gather_facts: no
-  vars:
-    patch_report_xlsx: "/home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/security_patch_report.xlsx"
   tasks:
     - name: Copy Excel report to Windows machine
       ansible.windows.win_copy:
-        src: "{{ patch_report_xlsx }}"
+        src: "/tmp/security_patch_report.xlsx"
         dest: "C:\\Users\\P-SVE7FZ\\Downloads\\security_patch_report.xlsx"
