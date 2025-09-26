@@ -1,54 +1,42 @@
-- name: Step 1 - Collect security patch list from Linux servers
-  hosts: Linux
-  gather_facts: false
-
+- name: Step 1 - Generate security patch report from Linux servers
+  hosts: linux_servers
+  gather_facts: no
   tasks:
-    - name: Get security patch list from yum
+    - name: Run yum to get list of security updates
       shell: yum updateinfo list security
-      register: security_patches
+      register: patch_output
 
-    - name: Set per-host patch_output fact
+    - name: Save output to fact
       set_fact:
-        patch_output: "{{ security_patches.stdout_lines | map('trim') | list }}"
+        patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
-
-- name: Step 2a - Create consolidated TXT report on control node
+- name: Step 2 - Save patch report on Ansible control node
   hosts: localhost
-  gather_facts: false
-
+  gather_facts: no
   tasks:
-    - name: Initialize report file
+    - name: Save patch report as TXT
       copy:
-        dest: "/tmp/security_patch_report.txt"
-        content: "Hostname | Security Patches\n"
-        force: yes
+        dest: /tmp/security_patch_report.txt
+        content: |
+          Security Patch List
+          -------------------
+          {% for host in groups['linux_servers'] %}
+          Host: {{ host }}
+          {% for line in hostvars[host].patch_list %}
+          {{ line }}
+          {% endfor %}
+          {% endfor %}
 
-    - name: Append patch info for each host
-      lineinfile:
-        path: "/tmp/security_patch_report.txt"
-        line: "{{ item.key }} | {{ item.value.patch_output | join('; ') }}"
-        create: yes
-      loop: "{{ hostvars | dict2items }}"
-      when: item.value.patch_output is defined
-
-
-- name: Step 2b - Convert TXT report to Excel
-  hosts: localhost
-  gather_facts: false
-
-  tasks:
-    - name: Run Python script to convert TXT to Excel
+    - name: Convert TXT report to Excel
       script: files/convert_txt_to_excel.py
-
+      args:
+        executable: /usr/bin/python3
 
 - name: Step 3 - Copy Excel report to Windows workstation
   hosts: my_windows_pc
-  gather_facts: false
-  vars:
-    ansible_become: false  # Do NOT escalate on Windows
-
+  gather_facts: no
   tasks:
-    - name: Copy Excel report to Windows Downloads folder
+    - name: Copy Excel report to Windows machine
       ansible.windows.win_copy:
         src: /tmp/security_patch_report.xlsx
         dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.xlsx
