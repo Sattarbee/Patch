@@ -1,5 +1,5 @@
 - name: Step 1 - Generate security patch report from Linux servers
-  hosts: linux_servers
+  hosts: Linux
   gather_facts: no
   tasks:
     - name: Run yum to get list of security updates
