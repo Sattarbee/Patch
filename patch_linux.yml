@@ -11,22 +11,20 @@
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
-- name: Step 2 - Save report as CSV on Ansible control node
+- name: Step 2 - Save patch report on Ansible control node as CSV
   hosts: localhost
   gather_facts: no
   vars:
     report_csv: "/var/tmp/security_patch_report.csv"
 
   tasks:
-    - name: Write CSV report
+    - name: Save patch report to CSV
       copy:
         dest: "{{ report_csv }}"
         content: |
-          Host,Security Update
+          Host,Security Updates
           {% for host in groups['Linux'] %}
-          {% for line in hostvars[host].patch_list %}
-          {{ host }},{{ line }}
-          {% endfor %}
+          {{ host }},"{% for line in hostvars[host].patch_list %}{{ line }}; {% endfor %}"
           {% endfor %}
 
     - name: Show where CSV was saved
@@ -36,6 +34,7 @@
 - name: Step 3 - Copy CSV report to Windows workstation
   hosts: my_windows_pc
   gather_facts: no
+  become: false     # <-- important: disable become for Windows hosts
   tasks:
     - name: Copy report to Windows Downloads folder
       ansible.windows.win_copy:
