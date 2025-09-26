@@ -1,4 +1,4 @@
-- name: Step 1 - Collect patch list from Linux servers
+- name: Step 1 - Collect security patch list from Linux servers
   hosts: Linux
   gather_facts: false
 
@@ -12,7 +12,7 @@
         patch_output: "{{ security_patches.stdout_lines | map('trim') | list }}"
 
 
-- name: Step 2 - Create consolidated TXT report on control node
+- name: Step 2a - Create consolidated TXT report on control node
   hosts: localhost
   gather_facts: false
 
@@ -32,14 +32,23 @@
       when: item.value.patch_output is defined
 
 
-- name: Step 3 - Copy report to Windows workstation
-  hosts: my_windows_pc  # Replace with correct group or host
+- name: Step 2b - Convert TXT report to Excel
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Run Python script to convert TXT to Excel
+      script: files/convert_txt_to_excel.py
+
+
+- name: Step 3 - Copy Excel report to Windows workstation
+  hosts: my_windows_pc
   gather_facts: false
   vars:
-    ansible_become: false  # 💡 Important to avoid sudo on Windows
-  tasks:
-    - name: Copy report to Windows machine
-      ansible.windows.win_copy:
-        src: /tmp/security_patch_report.txt
-        dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.txt
+    ansible_become: false  # Do NOT escalate on Windows
 
+  tasks:
+    - name: Copy Excel report to Windows Downloads folder
+      ansible.windows.win_copy:
+        src: /tmp/security_patch_report.xlsx
+        dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.xlsx
