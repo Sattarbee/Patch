@@ -11,13 +11,13 @@
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
-- name: Step 2 - Save patch report on Ansible control node
+- name: Step 2 - Save patch report and convert to Excel on control node
   hosts: localhost
   gather_facts: no
   vars:
-    patch_report_txt: "/home/aap-tower/security_patch_report.txt"
-    patch_report_xlsx: "/home/aap-tower/security_patch_report.xlsx"
-    convert_script_path: "/home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py"
+    patch_report_txt: "/tmp/security_patch_report.txt"
+    patch_report_xlsx: "/tmp/security_patch_report.xlsx"
+    convert_script: "/home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py"
   tasks:
     - name: Save patch report as TXT
       copy:
@@ -32,29 +32,27 @@
           {% endfor %}
           {% endfor %}
 
-    - name: Check if TXT file exists
+    - name: Confirm TXT file exists
       stat:
         path: "{{ patch_report_txt }}"
-      register: txt_file_status
+      register: txt_stat
 
-    - name: Fail if TXT file not found
+    - name: Fail if TXT not created
       fail:
-        msg: "TXT file not found at {{ patch_report_txt }}"
-      when: not txt_file_status.stat.exists
+        msg: "TXT report file not found at {{ patch_report_txt }}"
+      when: not txt_stat.stat.exists
 
-    - name: Convert TXT report to Excel
+    - name: Convert TXT to Excel
       command:
         argv:
           - /usr/bin/python3
-          - "{{ convert_script_path }}"
+          - "{{ convert_script }}"
           - "{{ patch_report_txt }}"
           - "{{ patch_report_xlsx }}"
 
 - name: Step 3 - Copy Excel report to Windows workstation
   hosts: my_windows_pc
   gather_facts: no
-  vars:
-    patch_report_xlsx: "/home/aap-tower/security_patch_report.xlsx"
   tasks:
     - name: Copy Excel report to Windows machine
       ansible.windows.win_copy:
