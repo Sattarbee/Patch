@@ -11,8 +11,6 @@
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
----
-
 - name: Step 2 - Save report as CSV on Ansible control node
   hosts: localhost
   gather_facts: no
@@ -34,8 +32,6 @@
     - name: Show where CSV was saved
       debug:
         msg: "CSV report saved to {{ report_csv }}"
-
----
 
 - name: Step 3 - Copy CSV report to Windows workstation
   hosts: my_windows_pc
