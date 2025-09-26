@@ -2,7 +2,6 @@
 import sys
 import xlsxwriter
 
-# Accept input/output paths from command line
 if len(sys.argv) != 3:
     print("Usage: convert_txt_to_excel.py <input_txt> <output_xlsx>")
     sys.exit(1)

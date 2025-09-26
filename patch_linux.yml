@@ -1,4 +1,3 @@
----
 - name: Step 1 - Generate security patch report from Linux servers
   hosts: Linux
   gather_facts: no
@@ -11,20 +10,21 @@
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
-- name: Step 2 - Save patch report and convert to Excel on control node
+- name: Step 2 - Save and convert patch report on control node
   hosts: localhost
   gather_facts: no
   vars:
-    patch_report_txt: "/tmp/security_patch_report.txt"
-    patch_report_xlsx: "/tmp/security_patch_report.xlsx"
-    convert_script: "/home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py"
+    report_txt: "/var/tmp/security_patch_report.txt"
+    report_xlsx: "/var/tmp/security_patch_report.xlsx"
+    convert_script: "{{ playbook_dir }}/files/convert_txt_to_excel.py"
+
   tasks:
-    - name: Save patch report as TXT
+    - name: Save patch report to TXT
       copy:
-        dest: "{{ patch_report_txt }}"
+        dest: "{{ report_txt }}"
         content: |
-          Security Patch List
-          -------------------
+          Security Patch Report
+          ======================
           {% for host in groups['Linux'] %}
           Host: {{ host }}
           {% for line in hostvars[host].patch_list %}
@@ -32,23 +32,19 @@
           {% endfor %}
           {% endfor %}
 
-    - name: Confirm TXT file exists
-      stat:
-        path: "{{ patch_report_txt }}"
-      register: txt_stat
-
-    - name: Fail if TXT not created
-      fail:
-        msg: "TXT report file not found at {{ patch_report_txt }}"
-      when: not txt_stat.stat.exists
-
-    - name: Convert TXT to Excel
+    - name: Convert TXT to Excel using Python script
       command:
         argv:
           - /usr/bin/python3
           - "{{ convert_script }}"
-          - "{{ patch_report_txt }}"
-          - "{{ patch_report_xlsx }}"
+          - "{{ report_txt }}"
+          - "{{ report_xlsx }}"
+      register: convert_result
+      ignore_errors: no
+
+    - name: Debug Python script result
+      debug:
+        var: convert_result
 
 - name: Step 3 - Copy Excel report to Windows workstation
   hosts: my_windows_pc
@@ -56,5 +52,5 @@
   tasks:
     - name: Copy Excel report to Windows machine
       ansible.windows.win_copy:
-        src: "{{ patch_report_xlsx }}"
-        dest: "C:\\Users\\P-SVE7FZ\\Downloads\\security_patch_report.xlsx"
+        src: /var/tmp/security_patch_report.xlsx
+        dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.xlsx
