@@ -26,11 +26,11 @@
           {{ line }}
           {% endfor %}
           {% endfor %}
-
     - name: Convert TXT report to Excel
-      shell: /usr/bin/python3 /home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py
-      args:
-        executable: /usr/bin/python3
+      command:
+        argv:
+          - /usr/bin/python3
+          - /home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py
 
 - name: Step 3 - Copy Excel report to Windows workstation
   hosts: my_windows_pc
