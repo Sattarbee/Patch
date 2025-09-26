@@ -11,36 +11,55 @@
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
-- name: Step 2 - Save patch report on Ansible control node as CSV
+- name: Step 2 - Save patch data on control node in intermediate text format
   hosts: localhost
   gather_facts: no
   vars:
-    report_csv: "/var/tmp/security_patch_report.csv"
-
+    report_txt: "/var/tmp/security_patch_report.txt"
+    report_xlsx: "/var/tmp/security_patch_report.xlsx"
   tasks:
-    - name: Save patch report to CSV with only host and RHSA lines
+    - name: Save patch data to intermediate text file (host + RHSA lines)
       copy:
-        dest: "{{ report_csv }}"
+        dest: "{{ report_txt }}"
         content: |
-          Host,RHSA_Update
           {% for host in groups['Linux'] %}
+          {{ host }}
           {% for line in hostvars[host].patch_list %}
           {% if 'RHSA-' in line %}
-          {{ host }},"{{ line }}"
+          {{ line }}
           {% endif %}
           {% endfor %}
           {% endfor %}
 
-    - name: Show where CSV was saved
-      debug:
-        msg: "CSV report saved to {{ report_csv }}"
+    - name: Generate multi-sheet Excel report from intermediate text file
+      command: /usr/bin/python3 - <<EOF
+import xlsxwriter
 
-- name: Step 3 - Copy CSV report to Windows workstation
+workbook = xlsxwriter.Workbook('{{ report_xlsx }}')
+
+with open('{{ report_txt }}', 'r') as f:
+    content = f.read().strip().split('\\n\\n')
+    for block in content:
+        lines = block.strip().split('\\n')
+        sheet_name = lines[0][:31]  # Excel sheet name max length
+        worksheet = workbook.add_worksheet(sheet_name)
+        worksheet.write(0, 0, 'RHSA_Update')
+        for row_num, line in enumerate(lines[1:], start=1):
+            worksheet.write(row_num, 0, line)
+
+workbook.close()
+EOF
+
+    - name: Show where Excel file is saved
+      debug:
+        msg: "Excel report saved to {{ report_xlsx }}"
+
+- name: Step 3 - Copy Excel report to Windows workstation
   hosts: my_windows_pc
   gather_facts: no
-  become: false     # <-- important: disable become for Windows hosts
+  become: false
   tasks:
-    - name: Copy report to Windows Downloads folder
+    - name: Copy Excel report to Windows Downloads folder
       ansible.windows.win_copy:
-        src: /var/tmp/security_patch_report.csv
-        dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.csv
+        src: /var/tmp/security_patch_report.xlsx
+        dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.xlsx
