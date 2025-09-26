@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
+import sys
 import xlsxwriter
 
-input_txt = "/tmp/security_patch_report.txt"
-output_xlsx = "/tmp/security_patch_report.xlsx"
+# Check for arguments
+if len(sys.argv) != 3:
+    print("Usage: convert_txt_to_excel.py <input_txt_file> <output_xlsx_file>")
+    sys.exit(1)
+
+input_txt = sys.argv[1]
+output_xlsx = sys.argv[2]
 
 workbook = xlsxwriter.Workbook(output_xlsx)
 worksheet = workbook.add_worksheet()
