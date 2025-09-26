@@ -1,24 +1,51 @@
----
-- name: Run `yum updateinfo list security` and capture output
+- name: Step 1 - Collect security patch list from Linux servers
   hosts: Linux
-  become: yes
-
-  tasks:
-    - name: Get yum security update info
-      shell: yum updateinfo list security
-      register: security_output
-
-    - name: Set fact for output
-      set_fact:
-        security_report: "{{ security_output.stdout }}"
-
-- name: Copy report to Windows workstation
-  hosts: my_windows_pc
   gather_facts: false
 
   tasks:
-    - name: Save Linux patch report to file on Windows
+    - name: Get security patch list from yum
+      shell: yum updateinfo list security
+      register: security_patches
+
+    - name: Trim and set security patch list
+      set_fact:
+        patch_output: "{{ security_patches.stdout_lines | map('trim') | list }}"
+
+    - name: Build all_patch_info fact on localhost
+      set_fact:
+        all_patch_info: >-
+          {{
+            all_patch_info | default({}) |
+            combine({ inventory_hostname: patch_output })
+          }}
+      delegate_to: localhost
+      run_once: true
+
+
+- name: Step 2 - Create consolidated TXT report on control node
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Initialize security patch report file
+      copy:
+        dest: "/tmp/security_patch_report.txt"
+        content: "Hostname | Security Patches\n"
+        force: yes
+
+    - name: Append each host's security patch data
+      lineinfile:
+        path: "/tmp/security_patch_report.txt"
+        line: "{{ item.key }} | {{ item.value | join('; ') }}"
+        create: yes
+      loop: "{{ hostvars.localhost.all_patch_info | dict2items }}"
+      when: hostvars.localhost.all_patch_info is defined
+
+
+- name: Step 3 - Copy report to Windows workstation
+  hosts: my_windows_pc
+  gather_facts: false
+  tasks:
+    - name: Copy TXT report to Windows Downloads folder
       ansible.windows.win_copy:
-        content: "{{ hostvars[item].security_report }}"
-        dest: "C:\\Users\\P-SVE7FZ\\Downloads\\{{ item }}_yum_security_report.csv"
-      loop: "{{ groups['all'] }}"
+        src: /tmp/security_patch_report.txt
+        dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.txt
