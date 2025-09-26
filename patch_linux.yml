@@ -6,7 +6,7 @@
       shell: yum updateinfo list security
       register: patch_output
 
-    - name: Save output to fact
+    - name: Save patch list fact on each Linux host
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
@@ -14,7 +14,7 @@
   hosts: localhost
   gather_facts: no
   tasks:
-    - name: Save patch report as TXT
+    - name: Create patch report TXT file on control node
       copy:
         dest: /tmp/security_patch_report.txt
         content: |
@@ -22,15 +22,20 @@
           -------------------
           {% for host in groups['Linux'] %}
           Host: {{ host }}
-          {% for line in hostvars[host].patch_list %}
+          {% for line in hostvars[host].patch_list | default([]) %}
           {{ line }}
           {% endfor %}
           {% endfor %}
+
     - name: Convert TXT report to Excel
       command:
         argv:
           - /usr/bin/python3
           - /home/aap-tower/Desktop/ansible-automation-platform-containerized-setup-bundle-2.5-15.1-x86_64/Patch/files/convert_txt_to_excel.py
+          - /tmp/security_patch_report.txt
+          - /tmp/security_patch_report.xlsx
+      args:
+        chdir: /tmp
 
 - name: Step 3 - Copy Excel report to Windows workstation
   hosts: my_windows_pc
