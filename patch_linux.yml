@@ -11,7 +11,6 @@
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
-
 - name: Step 2 - Save and convert report on Ansible control node
   hosts: localhost
   gather_facts: no
@@ -19,37 +18,8 @@
     report_txt: "/var/tmp/security_patch_report.txt"
     report_xlsx: "/var/tmp/security_patch_report.xlsx"
     convert_script: "/runner/project/files/convert_txt_to_excel.py"
-    # Set your python interpreter explicitly to the one with xlsxwriter installed
-    ansible_python_interpreter: /usr/bin/python3
 
   tasks:
-    - name: Check python3 path
-      command: which python3
-      register: python3_path
-
-    - debug:
-        msg: "Python3 path is {{ python3_path.stdout }}"
-
-    - name: Check python3 version
-      command: python3 --version
-      register: python3_version
-
-    - debug:
-        msg: "Python3 version is {{ python3_version.stdout }}"
-
-    - name: Check if xlsxwriter can be imported
-      command: python3 -c "import xlsxwriter; print(xlsxwriter.__version__)"
-      register: xlsxwriter_check
-      ignore_errors: yes
-
-    - debug:
-        msg: "xlsxwriter version: {{ xlsxwriter_check.stdout if xlsxwriter_check.rc == 0 else 'not found' }}"
-
-    - name: Fail if xlsxwriter is not found
-      fail:
-        msg: "xlsxwriter module not found in python3 used by Ansible"
-      when: xlsxwriter_check.rc != 0
-
     - name: Save patch report to TXT
       copy:
         dest: "{{ report_txt }}"
@@ -73,10 +43,18 @@
         msg: "TXT report not found at {{ report_txt }}"
       when: not txt_stat.stat.exists
 
+    - name: Check python3 version
+      command: /usr/bin/python3 --version
+      register: python3_version
+      ignore_errors: yes
+
+    - debug:
+        msg: "Python3 version is {{ python3_version.stdout | default('python3 not found') }}"
+
     - name: Convert TXT report to Excel
       command:
         argv:
-          - /usr/bin/python3       # Make sure this is the python with xlsxwriter installed
+          - /usr/bin/python3
           - "{{ convert_script }}"
           - "{{ report_txt }}"
           - "{{ report_xlsx }}"
@@ -96,15 +74,9 @@
         msg: "Conversion failed. See debug output above."
       when: convert_result.rc != 0
 
-
 - name: Step 3 - Copy Excel report to Windows workstation (optional)
   hosts: my_windows_pc
   gather_facts: no
-  vars:
-    ansible_connection: winrm
-    ansible_winrm_transport: ntlm
-    ansible_winrm_server_cert_validation: ignore
-    ansible_port: 5985
   tasks:
     - name: Copy Excel report to Windows Downloads folder
       ansible.windows.win_copy:
