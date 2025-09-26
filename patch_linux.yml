@@ -18,13 +18,17 @@
     report_csv: "/var/tmp/security_patch_report.csv"
 
   tasks:
-    - name: Save patch report to CSV
+    - name: Save patch report to CSV with only host and RHSA lines
       copy:
         dest: "{{ report_csv }}"
         content: |
-          Host,Security Updates
+          Host,RHSA_Update
           {% for host in groups['Linux'] %}
-          {{ host }},"{% for line in hostvars[host].patch_list %}{{ line }}; {% endfor %}"
+          {% for line in hostvars[host].patch_list %}
+          {% if 'RHSA-' in line %}
+          {{ host }},"{{ line }}"
+          {% endif %}
+          {% endfor %}
           {% endfor %}
 
     - name: Show where CSV was saved
