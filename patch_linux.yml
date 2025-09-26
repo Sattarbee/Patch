@@ -24,7 +24,7 @@
   hosts: localhost
   tasks:
     - name: Merge all JSON into a single Excel report
-      script: generate_excel.py
+      script: files/generate_excel.py
 
 - name: Copy Excel report to Windows workstation
   hosts: my_windows_pc
