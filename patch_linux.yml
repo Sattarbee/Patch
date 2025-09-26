@@ -11,74 +11,37 @@
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
-- name: Step 2 - Save and convert report on Ansible control node
+---
+
+- name: Step 2 - Save report as CSV on Ansible control node
   hosts: localhost
   gather_facts: no
   vars:
-    report_txt: "/var/tmp/security_patch_report.txt"
-    report_xlsx: "/var/tmp/security_patch_report.xlsx"
-    convert_script: "/runner/project/files/convert_txt_to_excel.py"
+    report_csv: "/var/tmp/security_patch_report.csv"
 
   tasks:
-    - name: Save patch report to TXT
+    - name: Write CSV report
       copy:
-        dest: "{{ report_txt }}"
+        dest: "{{ report_csv }}"
         content: |
-          Security Patch Report
-          ======================
+          Host,Security Update
           {% for host in groups['Linux'] %}
-          Host: {{ host }}
           {% for line in hostvars[host].patch_list %}
-          {{ line }}
+          {{ host }},{{ line }}
           {% endfor %}
           {% endfor %}
 
-    - name: Check that TXT report was saved
-      stat:
-        path: "{{ report_txt }}"
-      register: txt_stat
-
-    - name: Fail if TXT report not found
-      fail:
-        msg: "TXT report not found at {{ report_txt }}"
-      when: not txt_stat.stat.exists
-
-    - name: Check python3 version
-      command: /usr/bin/python3 --version
-      register: python3_version
-      ignore_errors: yes
-
-    - debug:
-        msg: "Python3 version is {{ python3_version.stdout | default('python3 not found') }}"
-
-    - name: Convert TXT report to Excel
-      command:
-        argv:
-          - /usr/bin/python3
-          - "{{ convert_script }}"
-          - "{{ report_txt }}"
-          - "{{ report_xlsx }}"
-      register: convert_result
-      ignore_errors: yes
-
-    - name: Debug conversion stdout
+    - name: Show where CSV was saved
       debug:
-        var: convert_result.stdout_lines
+        msg: "CSV report saved to {{ report_csv }}"
 
-    - name: Debug conversion stderr
-      debug:
-        var: convert_result.stderr_lines
+---
 
-    - name: Fail if conversion failed
-      fail:
-        msg: "Conversion failed. See debug output above."
-      when: convert_result.rc != 0
-
-- name: Step 3 - Copy Excel report to Windows workstation (optional)
+- name: Step 3 - Copy CSV report to Windows workstation
   hosts: my_windows_pc
   gather_facts: no
   tasks:
-    - name: Copy Excel report to Windows Downloads folder
+    - name: Copy report to Windows Downloads folder
       ansible.windows.win_copy:
-        src: /var/tmp/security_patch_report.xlsx
-        dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.xlsx
+        src: /var/tmp/security_patch_report.csv
+        dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.csv
