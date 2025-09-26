@@ -1,6 +1,6 @@
 ---
 - name: Gather yum security updates from Linux servers
-  hosts: all
+  hosts: Linux
   become: yes
   gather_facts: yes
 
