@@ -4,10 +4,10 @@
   become: yes
 
   tasks:
-    - name: Run yum update command and capture the output directly to the file
-      shell: "yum update -y >> /home/insve7fz/{{ ansible_fqdn }}.txt"
-      register: yum_update_output
-      ignore_errors: true
+    #    - name: Run yum update command and capture the output directly to the file
+    #      shell: "yum update -y >> /home/insve7fz/{{ ansible_fqdn }}.txt"
+    #      register: yum_update_output
+    #      ignore_errors: true
 
     - name: Get the current date
       command: date
