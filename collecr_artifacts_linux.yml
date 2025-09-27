@@ -1,35 +1,80 @@
 ---
-- name: Collect system information and update file
+- name: Step 1 - Collect system information from Linux hosts
   hosts: Linux
   become: yes
+  gather_facts: false
 
   tasks:
-    #    - name: Run yum update command and capture the output directly to the file
-    #      shell: "yum update -y >> /home/insve7fz/{{ ansible_fqdn }}.txt"
-    #      register: yum_update_output
-    #      ignore_errors: true
+    #   - name: Run yum update
+    #    shell: yum update -y
+    #     register: yum_update_output
+    #    ignore_errors: true
 
-    - name: Get the current date
+    - name: Get current date
       command: date
       register: current_date
 
-    - name: Show system uptime
+    - name: Get system uptime
       command: uptime
       register: system_uptime
 
-    - name: Append the current date to the file
-      shell: "echo 'Current date: {{ current_date.stdout }}' >> /home/insve7fz/{{ ansible_fqdn }}.txt"
-
-    - name: Append system uptime to the file
-      shell: "echo 'System uptime: {{ system_uptime.stdout }}' >> /home/insve7fz/{{ ansible_fqdn }}.txt"
-
-    - name: Get the last 15 most recently installed/updated packages
-      shell: "rpm -qa --last | head -n 15"
+    - name: Get last 15 installed/updated packages
+      shell: rpm -qa --last | head -n 15
       register: recent_packages
-      changed_when: false
 
-    - name: Append the last 15 installed/updated packages to the file
-      shell: |
-        echo "Last 15 installed/updated packages:" >> /home/insve7fz/{{ ansible_fqdn }}.txt
-        echo "{{ recent_packages.stdout }}" >> /home/insve7fz/{{ ansible_fqdn }}.txt
-      when: recent_packages is defined
+    - name: Set collected data as fact
+      set_fact:
+        collected_data: |
+          =====================================
+          Host: {{ inventory_hostname }}
+          -------------------------------------
+          #          Command: yum update -y
+          #          Output:
+          #          {{ yum_update_output.stdout | default('N/A') }}
+
+          Command: date
+          Output:
+          {{ current_date.stdout }}
+
+          Command: uptime
+          Output:
+          {{ system_uptime.stdout }}
+
+          Command: rpm -qa --last | head -n 15
+          Output:
+          {{ recent_packages.stdout }}
+          =====================================
+
+
+- name: Step 2 - Save all results to a single file on localhost
+  hosts: localhost
+  gather_facts: no
+
+  vars:
+    output_file: "/var/tmp/collect_artifacts.txt"
+
+  tasks:
+    - name: Combine outputs from all Linux hosts into one file
+      copy:
+        dest: "{{ output_file }}"
+        content: |
+          {% for host in groups['Linux'] %}
+          {{ hostvars[host].collected_data }}
+
+          {% endfor %}
+
+    - name: Show location of saved file
+      debug:
+        msg: "Results saved to {{ output_file }}"
+
+
+- name: Step 3 - Copy the file to a Windows workstation
+  hosts: my_windows_pc
+  gather_facts: no
+  become: false
+
+  tasks:
+    - name: Copy final artifact file to Windows Downloads folder
+      ansible.windows.win_copy:
+        src: /var/tmp/collect_artifacts.txt
+        dest: C:\Users\P-SVE7FZ\Downloads\collect_artifacts.txt
