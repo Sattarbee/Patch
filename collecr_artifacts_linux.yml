@@ -1,0 +1,35 @@
+---
+- name: Collect system information and update file
+  hosts: Linux
+  become: yes
+
+  tasks:
+    - name: Run yum update command and capture the output directly to the file
+      shell: "yum update -y >> /home/insve7fz/{{ ansible_fqdn }}.txt"
+      register: yum_update_output
+      ignore_errors: true
+
+    - name: Get the current date
+      command: date
+      register: current_date
+
+    - name: Show system uptime
+      command: uptime
+      register: system_uptime
+
+    - name: Append the current date to the file
+      shell: "echo 'Current date: {{ current_date.stdout }}' >> /home/insve7fz/{{ ansible_fqdn }}.txt"
+
+    - name: Append system uptime to the file
+      shell: "echo 'System uptime: {{ system_uptime.stdout }}' >> /home/insve7fz/{{ ansible_fqdn }}.txt"
+
+    - name: Get the last 15 most recently installed/updated packages
+      shell: "rpm -qa --last | head -n 15"
+      register: recent_packages
+      changed_when: false
+
+    - name: Append the last 15 installed/updated packages to the file
+      shell: |
+        echo "Last 15 installed/updated packages:" >> /home/insve7fz/{{ ansible_fqdn }}.txt
+        echo "{{ recent_packages.stdout }}" >> /home/insve7fz/{{ ansible_fqdn }}.txt
+      when: recent_packages is defined
