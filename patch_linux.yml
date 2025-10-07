@@ -67,7 +67,7 @@
         src: "{{ report_csv }}"
       register: csv_data
 
-    - name: Create MIME email content
+    - name: Create MIME email with base64-encoded attachment
       set_fact:
         email_message: |
           From: {{ sender_email }}
@@ -86,13 +86,13 @@
           Content-Disposition: attachment; filename="security_patch_report.csv"
           Content-Transfer-Encoding: base64
 
-          {{ csv_data.content | regex_replace('.{76}', '\\0\n') }}
+          {{ csv_data.content }}
 
           --=====MAIL_BOUNDARY=====--
 
     - name: Send email via sendmail
-      ansible.builtin.command:
-        cmd: /usr/sbin/sendmail -t
+      shell: /usr/sbin/sendmail -t
+      args:
         stdin: "{{ email_message }}"
 
 # ============================================================
