@@ -56,7 +56,7 @@
       # - "another.team@ibm.com"   # add more recipients if needed
   tasks:
     - name: Send email with CSV attachment
-      mail:
+      community.general.mail:
         host: "{{ smtp_host }}"
         port: "{{ smtp_port }}"
         from: "{{ sender_email }}"
