@@ -31,7 +31,7 @@
           {% for host in groups['Linux'] %}
           {% for line in hostvars[host].patch_list | default([]) %}
           {% if 'RHSA-' in line %}
-          {{ host }},"{{ line }}"
+          {{ host }},"{{ line | replace(',', ';') }}"
           {% endif %}
           {% endfor %}
           {% endfor %}
@@ -47,13 +47,13 @@
   hosts: localhost
   gather_facts: no
   vars:
-    smtp_host: "172.25.52.17"
+    smtp_host: "172.25.52.17"   # Your SMTP relay
     smtp_port: 25
     report_csv: "/var/tmp/security_patch_report.csv"
     sender_email: "GPS_backup_alerts@ibm.onmicrosoft.com"
     recipients:
       - "Sattar.Bee.Shaik@ibm.com"
-      # - "another.team@ibm.com"   # add more recipients if needed
+      # - "another.team@ibm.com"
   tasks:
     - name: Send email with CSV attachment
       community.general.mail:
@@ -74,10 +74,11 @@
           https://platformhost/execution/jobs/playbook/{{ tower_job_id | default('manual') }}
         attach:
           - "{{ report_csv }}"
+      register: mail_status
 
     - name: Confirm email sent
       debug:
-        msg: "Email with {{ report_csv }} sent to {{ recipients }}"
+        msg: "Email sent successfully to {{ recipients }}. Status: {{ mail_status }}"
 
 # ============================================================
 # (Optional) Play 4 – Copy report to Windows workstation
