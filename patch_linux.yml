@@ -41,7 +41,7 @@
         msg: "CSV report saved to {{ report_csv }}"
 
 # ============================================================
-# Play 3 – Email the report to recipients using sendmail (debug-friendly)
+# Play 3 – Email the report to recipients using sendmail
 # ============================================================
 - name: Step 3 - Email the Linux patch CSV report
   hosts: localhost
@@ -67,13 +67,10 @@
         src: "{{ report_csv }}"
       register: csv_data
 
-    - name: Format base64 with line wrapping (RFC compliant)
-      set_fact:
-        csv_base64_wrapped: "{{ csv_data.content | regex_replace('(.{76})', '\\1\n') }}"
-
-    - name: Create email message as variable
-      set_fact:
-        email_message: |
+    - name: Create MIME email with base64-encoded attachment
+      copy:
+        dest: /tmp/email_message.txt
+        content: |
           From: {{ sender_email }}
           To: {{ recipients }}
           Subject: {{ subject }}
@@ -90,29 +87,16 @@
           Content-Disposition: attachment; filename="security_patch_report.csv"
           Content-Transfer-Encoding: base64
 
-          {{ csv_base64_wrapped }}
+          {{ csv_data.content }}
 
           --=====MAIL_BOUNDARY=====--
 
-    - name: Show the composed email message
-      debug:
-        var: email_message
-
-    - name: Write message to file for inspection
-      copy:
-        dest: /tmp/email_message.txt
-        content: "{{ email_message }}"
-
-    - name: Try sending email using sendmail
+    - name: Send email via sendmail
       shell: /usr/sbin/sendmail -t
+      environment:
+        PATH: "/usr/sbin:/usr/bin:/bin"
       args:
-        stdin: "{{ email_message }}"
-      register: sendmail_result
-      ignore_errors: yes
-
-    - name: Show sendmail result
-      debug:
-        var: sendmail_result
+        stdin: "{{ lookup('file', '/tmp/email_message.txt') }}"
 
 # ============================================================
 # Play 4 – Copy report to Windows workstation (optional)
