@@ -41,7 +41,7 @@
         msg: "CSV report saved to {{ report_csv }}"
 
 # ============================================================
-# Play 3 – Email the report to recipients using sendmail (with PATH fix)
+# Play 3 – Email the report to recipients using sendmail (fixed)
 # ============================================================
 - name: Step 3 - Email the Linux patch CSV report
   hosts: localhost
@@ -103,8 +103,8 @@
         dest: /tmp/email_message.txt
         content: "{{ email_message }}"
 
-    - name: Try sending email using sendmail with PATH environment
-      shell: sendmail -t
+    - name: Try sending email using sendmail with full path and PATH environment
+      shell: /usr/sbin/sendmail -t
       environment:
         PATH: "/usr/sbin:/usr/bin:/bin"
       args:
