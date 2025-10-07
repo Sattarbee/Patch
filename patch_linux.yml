@@ -41,47 +41,61 @@
         msg: "CSV report saved to {{ report_csv }}"
 
 # ============================================================
-# Play 3 – Email the report to recipients
+# Play 3 – Email the report to recipients using sendmail
 # ============================================================
 - name: Step 3 - Email the Linux patch CSV report
   hosts: localhost
   gather_facts: no
   vars:
-    smtp_host: "172.25.52.17"   # Your SMTP relay
-    smtp_port: 25
     report_csv: "/var/tmp/security_patch_report.csv"
     sender_email: "GPS_backup_alerts@ibm.onmicrosoft.com"
-    recipients:
-      - "Sattar.Bee.Shaik@ibm.com"
-      # - "another.team@ibm.com"
+    recipients: "Sattar.Bee.Shaik@ibm.com"
+    subject: "Linux Patch Report - Job #{{ tower_job_id | default('manual') }}"
+    email_body: |
+      Hi Team,
+
+      Please find the attached list of patches for Linux shared servers.
+
+      Regards,
+      Automation Team
+
+      Job #{{ tower_job_id | default('manual') }} details:
+      https://platformhost/execution/jobs/playbook/{{ tower_job_id | default('manual') }}
   tasks:
-    - name: Send email with CSV attachment
-      community.general.mail:
-        host: "{{ smtp_host }}"
-        port: "{{ smtp_port }}"
-        from: "{{ sender_email }}"
-        to: "{{ recipients }}"
-        subject: "Linux Patch Report - Job #{{ tower_job_id | default('manual') }}"
-        body: |
-          Hi Team,
+    - name: Read CSV and encode in base64
+      slurp:
+        src: "{{ report_csv }}"
+      register: csv_data
 
-          Please find the attached list of patches for Linux shared servers.
+    - name: Create MIME email with base64-encoded attachment
+      copy:
+        dest: /tmp/email_message.txt
+        content: |
+          From: {{ sender_email }}
+          To: {{ recipients }}
+          Subject: {{ subject }}
+          MIME-Version: 1.0
+          Content-Type: multipart/mixed; boundary="=====MAIL_BOUNDARY====="
 
-          Regards,
-          Automation Team
+          --=====MAIL_BOUNDARY=====
+          Content-Type: text/plain; charset="utf-8"
 
-          Job #{{ tower_job_id | default('manual') }} details:
-          https://platformhost/execution/jobs/playbook/{{ tower_job_id | default('manual') }}
-        attach:
-          - "{{ report_csv }}"
-      register: mail_status
+          {{ email_body }}
 
-    - name: Confirm email sent
-      debug:
-        msg: "Email sent successfully to {{ recipients }}. Status: {{ mail_status }}"
+          --=====MAIL_BOUNDARY=====
+          Content-Type: text/csv; name="security_patch_report.csv"
+          Content-Disposition: attachment; filename="security_patch_report.csv"
+          Content-Transfer-Encoding: base64
+
+          {{ csv_data.content }}
+
+          --=====MAIL_BOUNDARY=====--
+
+    - name: Send email via sendmail
+      shell: /usr/sbin/sendmail -t < /tmp/email_message.txt
 
 # ============================================================
-# (Optional) Play 4 – Copy report to Windows workstation
+# Play 4 – Copy report to Windows workstation (optional)
 # ============================================================
 - name: Step 4 - Copy CSV report to Windows workstation
   hosts: my_windows_pc
