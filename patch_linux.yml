@@ -67,10 +67,9 @@
         src: "{{ report_csv }}"
       register: csv_data
 
-    - name: Create MIME email with base64-encoded attachment
-      copy:
-        dest: /tmp/email_message.txt
-        content: |
+    - name: Create MIME email content
+      set_fact:
+        email_message: |
           From: {{ sender_email }}
           To: {{ recipients }}
           Subject: {{ subject }}
@@ -87,14 +86,14 @@
           Content-Disposition: attachment; filename="security_patch_report.csv"
           Content-Transfer-Encoding: base64
 
-          {{ csv_data.content }}
+          {{ csv_data.content | regex_replace('.{76}', '\\0\n') }}
 
           --=====MAIL_BOUNDARY=====--
 
     - name: Send email via sendmail
-      shell: /usr/sbin/sendmail -t
-      args:
-        stdin: "{{ lookup('file', '/tmp/email_message.txt') }}"
+      ansible.builtin.command:
+        cmd: /usr/sbin/sendmail -t
+        stdin: "{{ email_message }}"
 
 # ============================================================
 # Play 4 – Copy report to Windows workstation (optional)
