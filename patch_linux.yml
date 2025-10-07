@@ -1,4 +1,7 @@
 ---
+# ============================================================
+# Play 1 – Collect list of available security patches
+# ============================================================
 - name: Step 1 - Generate security patch report from Linux servers
   hosts: Linux
   gather_facts: no
@@ -11,12 +14,14 @@
       set_fact:
         patch_list: "{{ patch_output.stdout_lines | map('trim') | list }}"
 
+# ============================================================
+# Play 2 – Create CSV report on the Ansible Controller
+# ============================================================
 - name: Step 2 - Save patch report on Ansible control node as CSV
   hosts: localhost
   gather_facts: no
   vars:
     report_csv: "/var/tmp/security_patch_report.csv"
-
   tasks:
     - name: Save patch report to CSV with only host and RHSA lines
       copy:
@@ -24,7 +29,7 @@
         content: |
           Host,RHSA_Update
           {% for host in groups['Linux'] %}
-          {% for line in hostvars[host].patch_list %}
+          {% for line in hostvars[host].patch_list | default([]) %}
           {% if 'RHSA-' in line %}
           {{ host }},"{{ line }}"
           {% endif %}
@@ -35,10 +40,52 @@
       debug:
         msg: "CSV report saved to {{ report_csv }}"
 
-- name: Step 3 - Copy CSV report to Windows workstation
+# ============================================================
+# Play 3 – Email the report to recipients
+# ============================================================
+- name: Step 3 - Email the Linux patch CSV report
+  hosts: localhost
+  gather_facts: no
+  vars:
+    smtp_host: "172.25.52.17"
+    smtp_port: 25
+    report_csv: "/var/tmp/security_patch_report.csv"
+    sender_email: "GPS_backup_alerts@ibm.onmicrosoft.com"
+    recipients:
+      - "Sattar.Bee.Shaik@ibm.com"
+      # - "another.team@ibm.com"   # add more recipients if needed
+  tasks:
+    - name: Send email with CSV attachment
+      mail:
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        from: "{{ sender_email }}"
+        to: "{{ recipients }}"
+        subject: "Linux Patch Report - Job #{{ tower_job_id | default('manual') }}"
+        body: |
+          Hi Team,
+
+          Please find the attached list of patches for Linux shared servers.
+
+          Regards,
+          Automation Team
+
+          Job #{{ tower_job_id | default('manual') }} details:
+          https://platformhost/execution/jobs/playbook/{{ tower_job_id | default('manual') }}
+        attach:
+          - "{{ report_csv }}"
+
+    - name: Confirm email sent
+      debug:
+        msg: "Email with {{ report_csv }} sent to {{ recipients }}"
+
+# ============================================================
+# (Optional) Play 4 – Copy report to Windows workstation
+# ============================================================
+- name: Step 4 - Copy CSV report to Windows workstation
   hosts: my_windows_pc
   gather_facts: no
-  become: false     # <-- important: disable become for Windows hosts
+  become: false
   tasks:
     - name: Copy report to Windows Downloads folder
       ansible.windows.win_copy:
