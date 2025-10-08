@@ -84,4 +84,3 @@
         secure: starttls
         timeout: 10
         ehlohost: "{{ ansible_fqdn | default(ansible_hostname) }}"
-i
