@@ -54,7 +54,7 @@
         dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.csv
 
 # ================================================================
-
+---
 - name: Sending an e-mail using StartTLS, remote server, custom EHLO, and timeout of 10 seconds
   community.general.mail:
     host: 172.25.52.17
