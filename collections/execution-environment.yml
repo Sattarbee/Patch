@@ -1,8 +1,6 @@
 ---
 version: 1
 dependencies:
-  python: []
-  system: []
   galaxy:
     collections:
       - name: community.general
