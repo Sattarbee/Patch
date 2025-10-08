@@ -58,7 +58,7 @@
   hosts: localhost
   gather_facts: no
   collections:
-    - community.general.mail
+    - community.general
   vars:
     smtp_server: "172.25.52.17"
     smtp_port: 25
