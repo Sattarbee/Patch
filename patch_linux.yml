@@ -41,15 +41,13 @@
         msg: "CSV report saved to {{ report_csv }}"
 
 # ============================================================
-# Play 3 – Email the report using internal SMTP relay
+# Play 3 – Email the report using community.general.mail
 # ============================================================
 - name: Step 3 - Email the Linux patch CSV report
   hosts: localhost
   gather_facts: no
   vars:
     report_csv: "/var/tmp/security_patch_report.csv"
-    smtp_host: "172.25.52.17"
-    smtp_port: 25
     sender_email: "GPS_backup_alerts@ibm.onmicrosoft.com"
     recipients:
       - "Sattar.Bee.Shaik@ibm.com"
@@ -65,21 +63,17 @@
       Job #{{ tower_job_id | default('manual') }} details:
       https://platformhost/execution/jobs/playbook/{{ tower_job_id | default('manual') }}
   tasks:
-    - name: Send email via internal SMTP relay
+    - name: Send email with attachment via SMTP
       community.general.mail:
-        host: "{{ smtp_host }}"
-        port: "{{ smtp_port }}"
-        from: "{{ sender_email }}"
+        host: localhost
+        port: 25
         to: "{{ recipients }}"
+        from: "{{ sender_email }}"
         subject: "{{ subject }}"
         body: "{{ email_body }}"
         attach:
           - "{{ report_csv }}"
-      register: mail_result
-
-    - name: Show email send result
-      debug:
-        var: mail_result
+      delegate_to: localhost
 
 # ============================================================
 # Play 4 – Copy report to Windows workstation (optional)
