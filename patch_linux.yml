@@ -54,14 +54,34 @@
         dest: C:\Users\P-SVE7FZ\Downloads\security_patch_report.csv
 
 # ================================================================
----
-- name: Sending an e-mail using StartTLS, remote server, custom EHLO, and timeout of 10 seconds
-  community.general.mail:
-    host: 172.25.52.17
-    port: 25
-    timeout: 10
-    ehlohost: GPS_backup_alerts@ibm.onmicrosoft.com
-    to: sattar.bee.shaik@ibm.com
-    subject: Ansible-report
-    body: System {{ ansible_hostname }} has been successfully provisioned.
-    secure: starttls
+- name: Step 4 - Send email with STARTTLS
+  hosts: localhost
+  gather_facts: no
+  collections:
+    - community.general.mail
+  vars:
+    smtp_server: "172.25.52.17"
+    smtp_port: 25
+    sender_email: "gps_backup_alerts@ibm.onmicrosoft.com"
+    recipient_email: "sattar.bee.shaik@ibm.com"
+    email_subject: "Linux Patch Report"
+    email_body: |
+      Hi Team,
+
+      System {{ ansible_hostname }} has been successfully provisioned and the patch report is ready.
+
+      Regards,
+      Automation Team
+  tasks:
+    - name: Send email via SMTP with STARTTLS
+      community.general.mail:
+        host: "{{ smtp_server }}"
+        port: "{{ smtp_port }}"
+        to: "{{ recipient_email }}"
+        from: "{{ sender_email }}"
+        subject: "{{ email_subject }}"
+        body: "{{ email_body }}"
+        secure: starttls
+        timeout: 10
+        ehlohost: "{{ ansible_fqdn | default(ansible_hostname) }}"
+i
