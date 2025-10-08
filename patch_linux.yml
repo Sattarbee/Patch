@@ -41,16 +41,20 @@
         msg: "CSV report saved to {{ report_csv }}"
 
 # ============================================================
-# Play 3 – Email the report using community.general.mail
+# Play 3 – Email the report using community.general.mail with SMTP auth
 # ============================================================
 - name: Step 3 - Email the Linux patch CSV report
   hosts: localhost
   gather_facts: no
   vars:
     report_csv: "/var/tmp/security_patch_report.csv"
-    sender_email: "GPS_backup_alerts@ibm.onmicrosoft.com"
+    sender_email: "sattar.bee.shaik@ib.com"
     recipients:
-      - "Sattar.Bee.Shaik@ibm.com"
+      - "sisindri.vadlamudi2@ibm.com"
+    smtp_host: "172.25.52.17"
+    smtp_port: 25
+    smtp_username: "sattar.bee.shaik@ib.com"
+    smtp_password: "Darling@darling03"
     subject: "Linux Patch Report - Job #{{ tower_job_id | default('manual') }}"
     email_body: |
       Hi Team,
@@ -63,16 +67,19 @@
       Job #{{ tower_job_id | default('manual') }} details:
       https://platformhost/execution/jobs/playbook/{{ tower_job_id | default('manual') }}
   tasks:
-    - name: Send email with attachment via SMTP
+    - name: Send email with attachment via SMTP with authentication
       community.general.mail:
-        host: localhost
-        port: 25
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        username: "{{ smtp_username }}"
+        password: "{{ smtp_password }}"
         to: "{{ recipients }}"
         from: "{{ sender_email }}"
         subject: "{{ subject }}"
         body: "{{ email_body }}"
         attach:
           - "{{ report_csv }}"
+        secure: none   # change to 'starttls' if your SMTP server requires encryption
       delegate_to: localhost
 
 # ============================================================
