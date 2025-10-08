@@ -41,15 +41,18 @@
         msg: "CSV report saved to {{ report_csv }}"
 
 # ============================================================
-# Play 3 – Email the report to recipients using sendmail (fixed)
+# Play 3 – Email the report using internal SMTP relay
 # ============================================================
 - name: Step 3 - Email the Linux patch CSV report
   hosts: localhost
   gather_facts: no
   vars:
     report_csv: "/var/tmp/security_patch_report.csv"
+    smtp_host: "172.25.52.17"
+    smtp_port: 25
     sender_email: "GPS_backup_alerts@ibm.onmicrosoft.com"
-    recipients: "Sattar.Bee.Shaik@ibm.com"
+    recipients:
+      - "Sattar.Bee.Shaik@ibm.com"
     subject: "Linux Patch Report - Job #{{ tower_job_id | default('manual') }}"
     email_body: |
       Hi Team,
@@ -62,59 +65,21 @@
       Job #{{ tower_job_id | default('manual') }} details:
       https://platformhost/execution/jobs/playbook/{{ tower_job_id | default('manual') }}
   tasks:
-    - name: Read CSV and encode in base64
-      slurp:
-        src: "{{ report_csv }}"
-      register: csv_data
+    - name: Send email via internal SMTP relay
+      community.general.mail:
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        from: "{{ sender_email }}"
+        to: "{{ recipients }}"
+        subject: "{{ subject }}"
+        body: "{{ email_body }}"
+        attach:
+          - "{{ report_csv }}"
+      register: mail_result
 
-    - name: Format base64 with line wrapping (RFC compliant)
-      set_fact:
-        csv_base64_wrapped: "{{ csv_data.content | regex_replace('(.{76})', '\\1\n') }}"
-
-    - name: Create email message as variable
-      set_fact:
-        email_message: |
-          From: {{ sender_email }}
-          To: {{ recipients }}
-          Subject: {{ subject }}
-          MIME-Version: 1.0
-          Content-Type: multipart/mixed; boundary="=====MAIL_BOUNDARY====="
-
-          --=====MAIL_BOUNDARY=====
-          Content-Type: text/plain; charset="utf-8"
-
-          {{ email_body }}
-
-          --=====MAIL_BOUNDARY=====
-          Content-Type: text/csv; name="security_patch_report.csv"
-          Content-Disposition: attachment; filename="security_patch_report.csv"
-          Content-Transfer-Encoding: base64
-
-          {{ csv_base64_wrapped }}
-
-          --=====MAIL_BOUNDARY=====--
-
-    - name: Show the composed email message
+    - name: Show email send result
       debug:
-        var: email_message
-
-    - name: Write message to file for inspection
-      copy:
-        dest: /tmp/email_message.txt
-        content: "{{ email_message }}"
-
-    - name: Try sending email using sendmail with full path and PATH environment
-      shell: /usr/sbin/sendmail -t
-      environment:
-        PATH: "/usr/sbin:/usr/bin:/bin"
-      args:
-        stdin: "{{ email_message }}"
-      register: sendmail_result
-      ignore_errors: yes
-
-    - name: Show sendmail result
-      debug:
-        var: sendmail_result
+        var: mail_result
 
 # ============================================================
 # Play 4 – Copy report to Windows workstation (optional)
