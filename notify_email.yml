@@ -1,6 +1,3 @@
-# ============================================================
-# Play – Send email with STARTTLS
-# ============================================================
 ---
 - name: Send email with STARTTLS
   hosts: localhost
