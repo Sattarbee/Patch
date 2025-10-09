@@ -1,0 +1,58 @@
+---
+- name: Send pre-patch notification email
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    smtp_host: 172.25.52.17        # Replace with your SMTP relay
+    smtp_port: 25                      # Adjust if needed (e.g., 587)
+    mail_from: "GPS_backup_alerts@ibm.onmicrosoft.com"   # Replace with sender email
+    mail_to: "sattar.bee.shaik@ibm.com"  # Replace with recipient(s)
+    subject: "Pre-Patch Notification – Shared & CIC Linux Servers (September 2025)"
+
+    email_body: |
+      Hi All,
+
+      We will be deploying the security patches in Shared & CIC Linux Servers
+      for the month of September-2025 from 3rd to 4th week.
+
+      Timings scheduled as below:
+      --------------------------------------
+      Server Restart Time : 30-Sep-2025 8PM to 30-Sep-2025 10PM IST.
+
+      Details:
+      Hostname         | IP Address     | RFC
+      --------------------------------------------
+      Shared-Infra
+      in-mtprsys01v     172.25.225.52     19059
+      in-mtpzabbi01v     172.25.52.110     19059
+      IN-MTPNSOS01       172.25.225.250    19059
+      IN-MTPNSC01V       172.25.225.28     19059
+      CPSPURSYS01        172.21.52.52      19059
+      CNCEDRLOGS01V      10.163.63.60      19059
+      CNCADRSYS01V       10.163.63.57      19059
+      CNCLRSYS01V        10.163.63.58      19059
+      cncvsyslog01v      10.163.63.55      19059
+      IN-FTPRSYS01V      9.122.27.104      19059
+      mtpbkp02v          172.25.224.152    19059
+      cncnwrsys02v       10.163.63.56      19059
+
+      CIC-INFRA
+      cnctrursys01v      10.163.21.52      19085
+      cncnwrsys01v       10.163.63.52      19085
+      cncnsos01v         10.163.63.59      19085
+
+      Regards,
+      Linux Operations Team
+      Ansible Automation Platform
+
+  tasks:
+    - name: Send email notification
+      community.general.mail:
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        to: "{{ mail_to }}"
+        from: "{{ mail_from }}"
+        subject: "{{ subject }}"
+        body: "{{ email_body }}"
+      delegate_to: localhost
