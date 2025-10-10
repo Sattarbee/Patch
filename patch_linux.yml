@@ -56,11 +56,17 @@
 # =============================================================
 # Play 4 - Send an notification email
 # =============================================================
-- name: Sending an e-mail using StartTLS to the remote machine
-  mail:
-    host: 172.25.52.17
-    port: 25
-    to: sattar.bee.shaik@ibm.com
-    subject: Ansible-report
-    body: System {{ ansible_hostname }} has been successfully patched.
-    secure: starttls
+---
+- name: Send email notification
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Send an email
+      ansible.builtin.mail:
+        host: 172.25.52.17
+        port: 25
+        to: sattar.bee.shaik@ibm.com
+        subject: Ansible Notification
+        body: This is an automated email from Ansible.
+        # secure: starttls # Uncomment if your SMTP server requires STARTTLS
+      delegate_to: localhost # Ensures the mail module runs on the control node
