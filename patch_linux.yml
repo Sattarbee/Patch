@@ -63,7 +63,7 @@
   tasks:
     - name: Send an email
       ansible.builtin.mail:
-        host: 172.25.52.17
+        host: MTPSMTP01V.ibm.local
         port: 25
         to: sattar.bee.shaik@ibm.com
         subject: Ansible Notification
