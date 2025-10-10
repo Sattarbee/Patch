@@ -1,0 +1,7 @@
+# test_community_general.yml
+- name: Test community.general
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Use a module from community.general
+      community.general.ping:
