@@ -56,11 +56,11 @@
 # =============================================================
 # Play 4 - Send an notification email
 # =============================================================
-- name: Step 4 - Send email
+- name: Sending an e-mail using StartTLS to the remote machine
   mail:
     host: 172.25.52.17
     port: 25
-    from: GPS_backup_alerts@ibm.onmicrosoft.com
     to: sattar.bee.shaik@ibm.com
-    subject: "{{ansible_play_name}} has completed."
-    body: "Hi Team, Patch has been completd successfully for Shared linux servers"
+    subject: Ansible-report
+    body: System {{ ansible_hostname }} has been successfully patched.
+    secure: starttls
