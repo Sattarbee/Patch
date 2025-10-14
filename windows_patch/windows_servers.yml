@@ -1,0 +1,77 @@
+all:
+  hosts:
+    mtpadc01v.ibm.local:
+      ansible_host: 172.25.51.15
+    cnccni01v.ibm.local:
+      ansible_host: 10.163.63.61
+    cncisvr01v.ibm.local:
+      ansible_host: 10.163.63.110
+    mtpvcas01v.ibm.local:
+      ansible_host: 172.25.220.14
+    in-mtpvjm01v.ibm.local:
+      ansible_host: 172.25.225.70
+    cncdbs01v.ibm.local:
+      ansible_host: 10.163.63.18
+    cncpmi01v.ibm.local:
+      ansible_host: 10.163.63.66
+    mtpbkup01v.ibm.local:
+      ansible_host: 172.25.224.151
+    in-ndaaxisr01v.ibm.local:
+      ansible_host: 172.29.133.86
+    cncnjmp01v.ibm.local:
+      ansible_host: 10.163.63.10
+    mtpwsus01v.ibm.local:
+      ansible_host: 172.25.52.11
+    mtpvap01v.ibm.local:
+      ansible_host: 172.25.220.16
+    cNcacr02v.ibm.local:
+      ansible_host: 10.163.63.80
+    mtpvdb01v.ibm.local:
+      ansible_host: 172.25.220.17
+    cnccni03v.ibm.local:
+      ansible_host: 10.163.63.63
+    mtpsmtp01v.ibm.local:
+      ansible_host: 172.25.52.17
+    cnccni02v.ibm.local:
+      ansible_host: 10.163.63.62
+    cncfsi01v.ibm.local:
+      ansible_host: 10.163.63.39
+    cncpmi02v.ibm.local:
+      ansible_host: 10.163.63.67
+    cncvspt01v.ibm.local:
+      ansible_host: 10.163.63.128
+    cncadc01v.ibm.local:
+      ansible_host: 10.163.63.15
+    mtpsftp01v.ibm.local:
+      ansible_host: 172.25.225.49
+    cncdhcp01v.ibm.local:
+      ansible_host: 10.163.63.16
+    mtplogc01v.ibm.local:
+      ansible_host: 172.25.51.17
+    in-mtpcep01v.ibm.local:
+      ansible_host: 172.25.216.20
+    mtpdhcp01v.ibm.local:
+      ansible_host: 172.25.52.16
+    mtpnwjmp01v.ibm.local:
+      ansible_host: 172.25.225.10
+    cncejmp01v.ibm.local:
+      ansible_host: 10.163.63.23
+    mtpisvr01v.ibm.local:
+      ansible_host: 172.25.225.110
+    in-mtpbkp02p.ibm.local:
+      ansible_host: 172.25.225.230
+    cncpmi03v.ibm.local:
+      ansible_host: 10.163.63.68
+    mtprdc01v.ibm.local:
+      ansible_host: 172.25.51.53
+    cncjmp01v.ibm.local:
+      ansible_host: 10.163.63.22
+    mtpsjmp01v.ibm.local:
+      ansible_host: 172.25.225.210
+  vars:
+    ansible_connection: winrm
+    ansible_user: IBMIN\P-SVE7FZ
+    ansible_password: Darling@darling03
+    ansible_port: 5986
+    ansible_winrm_transport: basic
+    ansible_winrm_server_cert_validation: ignore

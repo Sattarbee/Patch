@@ -1,0 +1,7 @@
+---
+- name: Ping all Windows servers
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Test WinRM connection
+      win_ping:
