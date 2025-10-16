@@ -1,6 +1,6 @@
 ---
 - name: Gather Windows updates and export to CSV
-  hosts: windows
+  hosts: all
   gather_facts: no
 
   vars:
