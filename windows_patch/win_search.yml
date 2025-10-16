@@ -1,5 +1,5 @@
 ---
-- name: Search for available Windows updates (NO installation)
+- name: Detect pending Windows updates (pushed but not installed)
   hosts: all
   gather_facts: no
   tasks:
@@ -10,15 +10,15 @@
         start_mode: auto
         state: started
 
-    - name: Check for available Windows updates
+    - name: Search for pending updates (not yet installed)
       ansible.windows.win_updates:
         state: searched
-        category_names:
-          - SecurityUpdates
-          - CriticalUpdates
-          - UpdateRollups
       register: update_result
 
-    - name: Show available updates (if any)
+    - name: Show raw update search results
       debug:
-        msg: "{{ update_result.updates | default('No updates found') }}"
+        var: update_result
+
+    - name: Show updates only (if any found)
+      debug:
+        msg: "{{ update_result.updates | default('No pending updates') }}"
