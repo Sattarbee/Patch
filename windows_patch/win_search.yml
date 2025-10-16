@@ -1,0 +1,38 @@
+---
+- name: Gather Windows updates and export to CSV
+  hosts: windows
+  gather_facts: no
+
+  vars:
+    patch_csv_lines: []
+
+  tasks:
+
+    - name: Check for applicable updates (without installing)
+      ansible.windows.win_updates:
+        state: searched
+      register: patch_results
+
+    - name: Build CSV line per host
+      set_fact:
+        patch_csv_line: >-
+          {{ inventory_hostname }},
+          "{{ patch_results.updates | map(attribute='KBArticleIDs') | map('join', ',') | join(',') }}",
+          "{{ patch_results.updates | map(attribute='Title') | map('regex_replace', '\n', ' ') | join('; ') | replace('"', '') }}"
+
+    - name: Append host patch info to master list (on localhost)
+      delegate_to: localhost
+      run_once: false
+      set_fact:
+        patch_csv_lines: "{{ patch_csv_lines + [patch_csv_line] }}"
+
+    - name: Write CSV report (only once, after collecting all data)
+      delegate_to: my_windows_pc
+      run_once: true
+      copy:
+        dest: ./windows_patch_report.csv
+        content: |
+          Host,KB_IDs,Titles
+          {% for line in patch_csv_lines %}
+          {{ line }}
+          {% endfor %}
